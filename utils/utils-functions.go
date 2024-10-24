@@ -128,16 +128,6 @@ func UnmarshalResponse[T any](body []byte, result *T) error {
 	return json.Unmarshal(body, result)
 }
 
-func ExtraErrorString(err error) string {
-	var apiError ApiError
-	if jsonErr := json.Unmarshal([]byte(err.Error()), &apiError); jsonErr == nil {
-		return apiError.ErrorMessage
-	} else {
-		// Fallback to the default error message if unmarshalling fails
-		return fmt.Sprintf("failed: %v", err.Error())
-	}
-}
-
 func CheckPasswordHash(password, hash string) bool {
 	if password == hash {
 		return true
@@ -157,5 +147,4 @@ func TakeTokenString(token string) string {
 	}
 
 	return parts[1]
-
 }

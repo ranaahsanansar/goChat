@@ -77,59 +77,6 @@ func CreateUser(c *gin.Context) {
 	})
 }
 
-func createUserInKeyCloak(user *models.Users) (bool, error) {
-	var keyCloakUser = utils.KeyCloakUserDto{
-		Username:      user.Username,
-		Enabled:       true,
-		Email:         user.Email,
-		EmailVerified: true,
-		Credentials: []utils.UserCredentialDto{
-			{
-				Type:      "password",
-				Value:     user.Password,
-				Temporary: false,
-			},
-		},
-	}
-
-	keyCloakToken, err := utils.GetKeyCloakAdminToken()
-
-	if err != nil {
-		fmt.Println(err)
-		return false, err
-	}
-
-	// Define the expected structure of the response
-	type TokenResponse struct {
-		AccessToken string `json:"access_token"`
-	}
-
-	var tokenResponse TokenResponse
-
-	// Unmarshal the raw body into the ApiResponse struct
-	err = utils.UnmarshalResponse(keyCloakToken, &tokenResponse)
-
-	if err != nil {
-		return false, errors.New("failed to get token")
-	}
-	fmt.Println(tokenResponse.AccessToken)
-	//Prepare crate ser request
-	url := fmt.Sprintf("%s/admin/realms/%s/users", os.Getenv("KEYCLOAK_HOST"), os.Getenv("REALM_NAME"))
-
-	userData, err := json.Marshal(keyCloakUser)
-	if err != nil {
-		return false, err
-	}
-
-	_, _, err = utils.PostRequestJson(url, bytes.NewBuffer(userData), tokenResponse.AccessToken)
-	if err != nil {
-		fmt.Println(err.Error())
-		return false, err
-	}
-
-	return true, nil
-}
-
 func GetUser(c *gin.Context) {
 	// extract userid from param
 	var userId = c.Param("userid")
@@ -267,9 +214,12 @@ func RefreshToken(c *gin.Context) {
 		"refresh_token": refreshToken,
 	}
 
-	// Get the refresh token from the request (you can also get it from cookies or headers)
-
 	keycloakResponse, err := utils.PostRequestUrlEncoded(tokenEndpoint, data, "")
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to refresh token"})
+		return
+	}
 
 	// Parse the response body
 	var refreshTokenResponse utils.RefreshTokenResponse
@@ -281,4 +231,59 @@ func RefreshToken(c *gin.Context) {
 
 	// Return the new tokens
 	c.JSON(http.StatusOK, refreshTokenResponse)
+}
+
+// Private functions
+
+func createUserInKeyCloak(user *models.Users) (bool, error) {
+	var keyCloakUser = utils.KeyCloakUserDto{
+		Username:      user.Username,
+		Enabled:       true,
+		Email:         user.Email,
+		EmailVerified: true,
+		Credentials: []utils.UserCredentialDto{
+			{
+				Type:      "password",
+				Value:     user.Password,
+				Temporary: false,
+			},
+		},
+	}
+
+	keyCloakToken, err := utils.GetKeyCloakAdminToken()
+
+	if err != nil {
+		fmt.Println(err)
+		return false, err
+	}
+
+	// Define the expected structure of the response
+	type TokenResponse struct {
+		AccessToken string `json:"access_token"`
+	}
+
+	var tokenResponse TokenResponse
+
+	// Unmarshal the raw body into the ApiResponse struct
+	err = utils.UnmarshalResponse(keyCloakToken, &tokenResponse)
+
+	if err != nil {
+		return false, errors.New("failed to get token")
+	}
+	fmt.Println(tokenResponse.AccessToken)
+	//Prepare crate ser request
+	url := fmt.Sprintf("%s/admin/realms/%s/users", os.Getenv("KEYCLOAK_HOST"), os.Getenv("REALM_NAME"))
+
+	userData, err := json.Marshal(keyCloakUser)
+	if err != nil {
+		return false, err
+	}
+
+	_, _, err = utils.PostRequestJson(url, bytes.NewBuffer(userData), tokenResponse.AccessToken)
+	if err != nil {
+		fmt.Println(err.Error())
+		return false, err
+	}
+
+	return true, nil
 }
