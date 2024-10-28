@@ -10,7 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/ranaahsanansar/gochat/initializers"
-	user "github.com/ranaahsanansar/gochat/internal/user/dto"
+	userDto "github.com/ranaahsanansar/gochat/internal/user/dto"
 	"github.com/ranaahsanansar/gochat/models"
 	"github.com/ranaahsanansar/gochat/utils"
 )
@@ -19,7 +19,7 @@ func CreateUser(c *gin.Context) {
 
 	// get body from request
 
-	var body user.RegisterUserDTO
+	var body userDto.RegisterUserDTO
 
 	// Bind incoming JSON to the DTO
 	if err := c.ShouldBindJSON(&body); err != nil {
@@ -113,7 +113,7 @@ func GetUser(c *gin.Context) {
 
 func LogInUser(c *gin.Context) {
 
-	var body user.LoginUserDTO
+	var body userDto.LoginUserDTO
 	// Bind incoming JSON to the DTO
 	if err := c.ShouldBindJSON(&body); err != nil {
 		fmt.Println(err)
@@ -156,16 +156,6 @@ func LogInUser(c *gin.Context) {
 		"client_secret": os.Getenv("CLIENT_SECRET"),
 	}
 
-	kyecloakUser, err := json.Marshal(kyecloakUserCredential)
-	fmt.Println("🚀 ~ funcLogInUser ~ kyecloakUser:", string(kyecloakUser))
-	if err != nil {
-		fmt.Println(err)
-		c.JSON(500, gin.H{
-			"message": "Internal Server Error",
-		})
-		return
-	}
-
 	keycloakResponse, err := utils.PostRequestUrlEncoded(fmt.Sprintf("%s/realms/%s/protocol/openid-connect/token", os.Getenv("KEYCLOAK_HOST"), os.Getenv("REALM_NAME")), kyecloakUserCredential, "")
 	if err != nil {
 		fmt.Println(err)
@@ -184,8 +174,6 @@ func LogInUser(c *gin.Context) {
 		})
 		return
 	}
-
-	fmt.Println(keycloakLoginResponse.AccessToken)
 
 	// send response
 	c.JSON(200, gin.H{
@@ -241,6 +229,8 @@ func createUserInKeyCloak(user *models.Users) (bool, error) {
 		Enabled:       true,
 		Email:         user.Email,
 		EmailVerified: true,
+		FirstName:     "John",
+		LastName:      "Doe",
 		Credentials: []utils.UserCredentialDto{
 			{
 				Type:      "password",
@@ -253,7 +243,6 @@ func createUserInKeyCloak(user *models.Users) (bool, error) {
 	keyCloakToken, err := utils.GetKeyCloakAdminToken()
 
 	if err != nil {
-		fmt.Println(err)
 		return false, err
 	}
 
@@ -270,7 +259,6 @@ func createUserInKeyCloak(user *models.Users) (bool, error) {
 	if err != nil {
 		return false, errors.New("failed to get token")
 	}
-	fmt.Println(tokenResponse.AccessToken)
 	//Prepare crate ser request
 	url := fmt.Sprintf("%s/admin/realms/%s/users", os.Getenv("KEYCLOAK_HOST"), os.Getenv("REALM_NAME"))
 

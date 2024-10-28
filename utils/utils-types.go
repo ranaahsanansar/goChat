@@ -5,6 +5,8 @@ type KeyCloakUserDto struct {
 	Username      string              `json:"username"`
 	Enabled       bool                `json:"enabled"`
 	Email         string              `json:"email"`
+	FirstName     string              `json:"firstName"`
+	LastName      string              `json:"lastName"`
 	EmailVerified bool                `json:"emailVerified"`
 	Credentials   []UserCredentialDto `json:"credentials"`
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 
@@ -21,20 +22,16 @@ func UserGuard(c *gin.Context) {
 		return
 	}
 
-	fmt.Println(authHeader)
-
 	// token is in the format "Bearer <token>"
 	token := utils.TakeTokenString(authHeader)
 
 	// Check if the token is active
-	active, err := IntrospectToken(token)
+	active, err := IntrospectToken(token, c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 		c.Abort()
 		return
 	}
-
-	fmt.Println(active)
 
 	if !active {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
@@ -48,7 +45,7 @@ func UserGuard(c *gin.Context) {
 }
 
 // IntrospectToken verifies the access token using Keycloak's introspection endpoint
-func IntrospectToken(token string) (bool, error) {
+func IntrospectToken(token string, c *gin.Context) (bool, error) {
 	// Set up the URL for the introspection endpoint
 	introspectionURL := fmt.Sprintf("%s/realms/%s/protocol/openid-connect/token/introspect",
 		os.Getenv("KEYCLOAK_HOST"), os.Getenv("REALM_NAME"))
@@ -79,12 +76,25 @@ func IntrospectToken(token string) (bool, error) {
 		return false, fmt.Errorf("error: received status code %d", resp.StatusCode)
 	}
 
+	// Read the body into a byte slice
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return false, err
+	}
 	// Parse the response body
 	var responseBody struct {
-		Active bool `json:"active"`
+		Active   bool   `json:"active"`
+		UserName string `json:"username"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&responseBody); err != nil {
+
+	if err := json.Unmarshal(body, &responseBody); err != nil {
 		return false, err
+	}
+
+	// Only print the struct fields without the return statement involved
+	if responseBody.Active {
+		c.Set("username", responseBody.UserName)
+
 	}
 
 	return responseBody.Active, nil
