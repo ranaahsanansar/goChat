@@ -12,6 +12,7 @@ func RegisterRoutes(r *gin.Engine) {
 		userRoutes.GET("/get-user/:userid", GetUser)
 		userRoutes.POST("/login", LogInUser)
 		userRoutes.POST("/refresh-token", RefreshToken)
-		userRoutes.POST("/search", SearchUserAndGroup)
+		userRoutes.POST("/search-user", SearchUser)
+		userRoutes.POST("/search-group", SearchGroup)
 	}
 }

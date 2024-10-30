@@ -208,7 +208,7 @@ func RefreshToken(c *gin.Context) {
 	c.JSON(http.StatusOK, refreshTokenResponse)
 }
 
-func SearchUserAndGroup(c *gin.Context) {
+func SearchUser(c *gin.Context) {
 	var body userDto.SearchUserGroupDTO
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -217,20 +217,13 @@ func SearchUserAndGroup(c *gin.Context) {
 
 	// search on DB
 	var user []map[string]interface{}
-	result1 := initializers.DB.Raw(utils.SearchUserQuery, fmt.Sprintf("%%%s%%", body.KeyWord)).Scan(&user)
-	if result1.Error != nil {
-		fmt.Println("User", result1.Error)
+	result := initializers.DB.Raw(utils.SearchUserQuery, fmt.Sprintf("%%%s%%", body.KeyWord)).Scan(&user)
+	if result.Error != nil {
+		fmt.Println("User", result.Error)
 
 	}
 
-	var group []map[string]interface{}
-	result2 := initializers.DB.Raw(utils.SearchGroupQuery, fmt.Sprintf("%%%s%%", body.KeyWord)).Scan(&group)
-	if result2.Error != nil {
-		fmt.Println("Group not found", result2.Error)
-
-	}
-
-	if result1.RowsAffected == 0 && result2.RowsAffected == 0 {
+	if result.RowsAffected == 0 {
 		c.JSON(404, gin.H{
 			"message": "Not found any record",
 		})
@@ -240,9 +233,35 @@ func SearchUserAndGroup(c *gin.Context) {
 	// send response
 	c.JSON(200, gin.H{
 		"message": "user found",
-		"data":    gin.H{"user": user, "groups": group},
+		"data":    gin.H{"user": user},
 	})
+}
 
+func SearchGroup(c *gin.Context) {
+	var body userDto.SearchUserGroupDTO
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var group []map[string]interface{}
+	result := initializers.DB.Raw(utils.SearchGroupQuery, fmt.Sprintf("%%%s%%", body.KeyWord)).Scan(&group)
+	if result.Error != nil {
+		fmt.Println("Group not found", result.Error)
+	}
+
+	if result.RowsAffected == 0 {
+		c.JSON(404, gin.H{
+			"message": "Not found any record",
+		})
+		return
+	}
+
+	// send response
+	c.JSON(200, gin.H{
+		"message": "user found",
+		"data":    gin.H{"groups": group},
+	})
 }
 
 // Private functions
