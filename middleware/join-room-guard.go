@@ -37,6 +37,7 @@ func JoinRoomGuard(c *gin.Context) bool {
 		return false
 	}
 
+	// TODO: Add more logic to validate user Who can join this room
 	var chatRoom models.Groups
 	result := initializers.DB.First(&chatRoom, roomid)
 
@@ -56,7 +57,6 @@ func JoinRoomGuard(c *gin.Context) bool {
 		return false
 	}
 
-	// TODO: Add more logic to validate user Who can join this room
 	return true
 
 }

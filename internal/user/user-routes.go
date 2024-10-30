@@ -12,5 +12,6 @@ func RegisterRoutes(r *gin.Engine) {
 		userRoutes.GET("/get-user/:userid", GetUser)
 		userRoutes.POST("/login", LogInUser)
 		userRoutes.POST("/refresh-token", RefreshToken)
+		userRoutes.POST("/search", SearchUserAndGroup)
 	}
 }

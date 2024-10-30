@@ -37,3 +37,7 @@ func CreateGroup(c *gin.Context) {
 	})
 
 }
+
+// add friend by username
+
+// add some one to group
