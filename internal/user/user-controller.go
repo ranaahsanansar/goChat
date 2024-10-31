@@ -238,14 +238,16 @@ func SearchUser(c *gin.Context) {
 }
 
 func SearchGroup(c *gin.Context) {
-	var body userDto.SearchUserGroupDTO
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	var keyword = c.Query("keyword")
+
+	if keyword == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "keyword is required"})
+		c.Abort()
 		return
 	}
 
 	var group []map[string]interface{}
-	result := initializers.DB.Raw(utils.SearchGroupQuery, fmt.Sprintf("%%%s%%", body.KeyWord)).Scan(&group)
+	result := initializers.DB.Raw(utils.SearchGroupQuery, fmt.Sprintf("%%%s%%", keyword)).Scan(&group)
 	if result.Error != nil {
 		fmt.Println("Group not found", result.Error)
 	}

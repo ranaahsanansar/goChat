@@ -13,6 +13,6 @@ func RegisterRoutes(r *gin.Engine) {
 		userRoutes.POST("/login", LogInUser)
 		userRoutes.POST("/refresh-token", RefreshToken)
 		userRoutes.POST("/search-user", SearchUser)
-		userRoutes.POST("/search-group", SearchGroup)
+		userRoutes.GET("/search-group", SearchGroup)
 	}
 }
