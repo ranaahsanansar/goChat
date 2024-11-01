@@ -12,8 +12,10 @@ func ChatRoutes(r *gin.Engine, wshandler *websockets.Handler) {
 		chatRoutes.GET("/join-room/:roomId", wshandler.JoinRoom)
 		chatRoutes.POST("/create-group", middleware.UserGuard, CreateGroup)
 		chatRoutes.POST("/auto-create-group/:userId", middleware.UserGuard, AutoCreateGroup)
-		chatRoutes.POST("/add-member/:groupId/:userId", middleware.UserGuard, AddMemberToGroup)
+		chatRoutes.GET("/add-member/:groupId/:username", middleware.UserGuard, AddMemberToGroup)
 		chatRoutes.GET("/get-groups", middleware.UserGuard, GetGroups)
+		chatRoutes.GET("/delete-group/:groupId", middleware.UserGuard, DeleteGroup)
+		chatRoutes.GET("/get-group-info/:groupId", GetGroupInfo)
 	}
 }
 

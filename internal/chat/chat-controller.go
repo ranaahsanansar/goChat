@@ -117,10 +117,19 @@ func AutoCreateGroup(c *gin.Context) {
 }
 
 func AddMemberToGroup(c *gin.Context) {
-	var memberId = c.Param("userId")
+	var memberId = c.Param("username")
 	var groupId = c.Param("groupId")
 
-	fmt.Println(memberId, groupId)
+	var userDetails models.Users
+	result := initializers.DB.First(&userDetails, "username = ?", memberId)
+	if result.Error != nil {
+		c.JSON(500, gin.H{
+			"message": "failed to get user",
+		})
+		return
+	}
+	memberId = strconv.FormatUint(uint64(userDetails.ID), 10)
+
 	var isSuccess = AddMemberToGroupHelper(groupId, memberId, c)
 
 	if isSuccess {
@@ -153,7 +162,7 @@ func GetGroups(c *gin.Context) {
 	fmt.Println("UserId : ", userId)
 
 	var groups []map[string]interface{}
-	result = initializers.DB.Raw(utils.GetAllGroupsQuery, userId).Scan(&groups)
+	result = initializers.DB.Raw(utils.GetAllGroupsQuery, userName, userId).Scan(&groups)
 
 	if result.Error != nil {
 		c.JSON(500, gin.H{
@@ -168,6 +177,70 @@ func GetGroups(c *gin.Context) {
 		"message": "groups found",
 		"data": gin.H{
 			"groups": groups,
+		},
+	})
+}
+
+func DeleteGroup(c *gin.Context) {
+	var groupId = c.Param("groupId")
+	var userName, isExists = c.Get("username")
+	if !isExists {
+		c.JSON(400, gin.H{
+			"message": "Un Protected Request",
+		})
+		return
+	}
+
+	if groupId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "group id is required"})
+		c.Abort()
+		return
+	}
+
+	//  check user is the creator of the group
+	var groupDetails models.Groups
+	result := initializers.DB.First(&groupDetails, groupId)
+	if result.Error != nil {
+		c.JSON(500, gin.H{
+			"message": "failed to get group",
+		})
+		return
+	}
+	if groupDetails.CreatedBy != userName {
+		c.JSON(401, gin.H{
+			"message": "you are not the creator of this group",
+		})
+		return
+	}
+
+	result = initializers.DB.Unscoped().Delete(&models.Groups{}, groupId)
+	if result.Error != nil {
+		c.JSON(500, gin.H{
+			"message": "failed to delete",
+		})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"message": "group deleted",
+	})
+}
+
+func GetGroupInfo(c *gin.Context) {
+	var groupId = c.Param("groupId")
+
+	var groupDetails models.Groups
+	result := initializers.DB.First(&groupDetails, groupId)
+	if result.Error != nil {
+		c.JSON(500, gin.H{
+			"message": "failed to get group",
+		})
+		return
+	}
+	c.JSON(200, gin.H{
+		"message": "group found",
+		"data": gin.H{
+			"group": groupDetails,
 		},
 	})
 }
