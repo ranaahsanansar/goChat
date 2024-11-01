@@ -16,11 +16,8 @@ import (
 )
 
 func CreateUser(c *gin.Context) {
-
 	// get body from request
-
 	var body userDto.RegisterUserDTO
-
 	// Bind incoming JSON to the DTO
 	if err := c.ShouldBindJSON(&body); err != nil {
 		fmt.Println(err)
@@ -45,17 +42,14 @@ func CreateUser(c *gin.Context) {
 
 	// check in Db
 	isExists := initializers.DB.First(&user, "email = ?", body.Email)
-
 	if isExists.RowsAffected > 0 {
 		c.JSON(400, gin.H{
 			"message": "user already exists",
 		})
 		return
 	}
-
 	// create in keycloak and then create in DB
 	_, err := createUserInKeyCloak(&user)
-
 	if err != nil {
 		c.JSON(500, gin.H{
 			"message": errors.New("failed to create user").Error(),
@@ -70,7 +64,6 @@ func CreateUser(c *gin.Context) {
 		})
 		return
 	}
-
 	// send response
 	c.JSON(http.StatusOK, gin.H{
 		"message": "user created successfully",
@@ -81,9 +74,7 @@ func GetUser(c *gin.Context) {
 	// extract userid from param
 	var userId = c.Param("userid")
 	// search on DB
-
 	var user models.Users
-
 	result := initializers.DB.First(&user, userId)
 
 	if result.Error != nil {
@@ -102,17 +93,14 @@ func GetUser(c *gin.Context) {
 	}
 
 	// send response
-
 	c.JSON(200, gin.H{
 		"message": "user found",
 		"data": gin.H{
 			"user": user},
 	})
-
 }
 
 func LogInUser(c *gin.Context) {
-
 	var body userDto.LoginUserDTO
 	// Bind incoming JSON to the DTO
 	if err := c.ShouldBindJSON(&body); err != nil {
@@ -124,7 +112,6 @@ func LogInUser(c *gin.Context) {
 	// search on DB
 	var userModel models.Users
 	result := initializers.DB.First(&userModel, "username = ?", body.Username)
-
 	if result.Error != nil {
 		fmt.Println(result.Error)
 		c.JSON(500, gin.H{
@@ -219,6 +206,64 @@ func RefreshToken(c *gin.Context) {
 
 	// Return the new tokens
 	c.JSON(http.StatusOK, refreshTokenResponse)
+}
+
+func SearchUser(c *gin.Context) {
+	var body userDto.SearchUserGroupDTO
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// search on DB
+	var user []map[string]interface{}
+	result := initializers.DB.Raw(utils.SearchUserQuery, fmt.Sprintf("%%%s%%", body.KeyWord)).Scan(&user)
+	if result.Error != nil {
+		fmt.Println("User", result.Error)
+
+	}
+
+	if result.RowsAffected == 0 {
+		c.JSON(404, gin.H{
+			"message": "Not found any record",
+		})
+		return
+	}
+
+	// send response
+	c.JSON(200, gin.H{
+		"message": "user found",
+		"data":    gin.H{"user": user},
+	})
+}
+
+func SearchGroup(c *gin.Context) {
+	var keyword = c.Query("keyword")
+
+	if keyword == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "keyword is required"})
+		c.Abort()
+		return
+	}
+
+	var group []map[string]interface{}
+	result := initializers.DB.Raw(utils.SearchGroupQuery, fmt.Sprintf("%%%s%%", keyword)).Scan(&group)
+	if result.Error != nil {
+		fmt.Println("Group not found", result.Error)
+	}
+
+	if result.RowsAffected == 0 {
+		c.JSON(404, gin.H{
+			"message": "Not found any record",
+		})
+		return
+	}
+
+	// send response
+	c.JSON(200, gin.H{
+		"message": "user found",
+		"data":    gin.H{"groups": group},
+	})
 }
 
 // Private functions
