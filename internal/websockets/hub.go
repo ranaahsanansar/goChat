@@ -45,9 +45,7 @@ func (h *Hub) Run() {
 							Username: cl.Username,
 						}
 					}
-
 					delete(h.Rooms[cl.RoomID].Clients, cl.ID)
-
 					// Deleting the room is all users left the room
 					if len(room.Clients) == 0 {
 						fmt.Println("delete room", cl.RoomID)
