@@ -30,6 +30,7 @@ You can access the deployed application [here](#).
 - **Backend**: GoLang
 - **Authentication**: Keycloak
 - **Real-time Communication**: WebSockets
+- **Database**: Postgres
 
 ## Installation
 
@@ -37,6 +38,7 @@ You can access the deployed application [here](#).
 - [Node.js](https://nodejs.org/) (for Next.js)
 - [Go](https://golang.org/doc/install) (for backend)
 - [Keycloak](https://www.keycloak.org/) (for authentication)
+- [Postgres] (for database)
 
 ### Clone the Repository
 ```bash
